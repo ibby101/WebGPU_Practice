@@ -1,11 +1,17 @@
 import shader from "./shaders.wgsl";
 import { mat4, vec3 } from "gl-matrix";
 
+// Importing the rotation controller
+// This will handle the rotation logic and animation frame requests.
+import { setupRotationControl, getIsRotating } from "./rotate_button";
+
 const Initialise = async () => {
     const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement;
     const adapter = await navigator.gpu?.requestAdapter();
     const device = await adapter?.requestDevice();
     if (!device) throw new Error("WebGPU not supported.");
+
+
 
     const context = canvas.getContext('webgpu')!;
     const format = navigator.gpu.getPreferredCanvasFormat(); // Use preferred format
@@ -79,7 +85,11 @@ const Initialise = async () => {
 
 
     const render = () => {
-        rotation += 0.01;
+        // Only rotate if the button is toggled
+        // This function is called every frame to update the rotation and render the triangle
+        if (getIsRotating()) {
+            rotation += 0.01;
+        }
 
         const modelMatrix = mat4.create();
 
@@ -102,9 +112,9 @@ const Initialise = async () => {
         // Write the updated model matrix to the uniform buffer
         device.queue.writeBuffer(uniformBuffer, 0, modelMatrix as Float32Array);
         
-        const encoder = device.createCommandEncoder();
+        const encoder = device.createCommandEncoder(); // 
         const pass = encoder.beginRenderPass({
-            colorAttachments: [{ // Setting up the color attachment for the render pass
+            colorAttachments: [{ // 
                 view: context.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
@@ -118,10 +128,9 @@ const Initialise = async () => {
         pass.end();
 
         device.queue.submit([encoder.finish()]);
-        requestAnimationFrame(render);
     };
 
-    requestAnimationFrame(render);
+    setupRotationControl(render);
 };
 
 Initialise();
