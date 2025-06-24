@@ -1,8 +1,5 @@
 import shader from "./shaders.wgsl";
 import { mat4, vec3 } from "gl-matrix";
-
-// Importing the rotation controller
-// This will handle the rotation logic and animation frame requests.
 import { setupRotationControl, getIsRotating } from "./rotate_button";
 
 const Initialise = async () => {
@@ -11,23 +8,18 @@ const Initialise = async () => {
     const device = await adapter?.requestDevice();
     if (!device) throw new Error("WebGPU not supported.");
 
-
-
     const context = canvas.getContext('webgpu')!;
-    const format = navigator.gpu.getPreferredCanvasFormat(); // Use preferred format
+    const format = navigator.gpu.getPreferredCanvasFormat();
 
     context.configure({
         device,
         format,
-        alphaMode: 'premultiplied', // Use premultiplied alpha for better blending
+        alphaMode: 'premultiplied',
     });
 
     const shaderModule = device.createShaderModule({ code: shader });
 
-    // Creating a uniform buffer to hold the model and projection matrices
-    // The size is 4 * 16 bytes for the model matrix and 4 * 16 bytes for the projection matrix
-    // 4 * 16 bytes = 64 bytes for each matrix, total 128 bytes
-    const uniformBufferSize = 4 * 16 * 2;
+    const uniformBufferSize = 4 * 16; // 64 bytes for a 4x4 matrix
     const uniformBuffer = device.createBuffer({
         size: uniformBufferSize,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -46,7 +38,7 @@ const Initialise = async () => {
         vertex: {
             module: shaderModule,
             entryPoint: 'vs_main',
-            buffers: []
+            buffers: [], 
         },
         fragment: {
             module: shaderModule,
@@ -54,6 +46,17 @@ const Initialise = async () => {
             targets: [{ format }]
         },
         primitive: { topology: 'triangle-list' },
+        depthStencil: {
+            depthWriteEnabled: true,
+            depthCompare: 'less',
+            format: 'depth24plus',
+        },
+    });
+
+    const depthTexture = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: 'depth24plus',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
     const bindGroup = device.createBindGroup({
@@ -64,67 +67,49 @@ const Initialise = async () => {
         }],
     });
 
-    // Triangle's local center calculation
-    const triangleCenterX = 0.0;
-    const triangleCenterY = -0.5 / 3.0;
-
     let rotation = 0;
 
-    // Creating the projection matrix
-    // This matrix is used to project 3D coordinates into 2D screen space
-    const aspect = canvas.width / canvas.height;
-    const fieldOfView = (2 * Math.PI) / 5; // 36 degrees in radians
-    const zNear = 0.1; // Objects closer than this are clipped
-    const zFar = 100.0; // Objects further than this are clipped
-    const projectionMatrix = mat4.create();
-    mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-
-    // Writing the projection matrix to the uniform buffer
-    // This is done once, as the projection matrix does not change during the animation
-    device.queue.writeBuffer(uniformBuffer, 4 * 16, projectionMatrix as Float32Array);
-
-
     const render = () => {
-        // Only rotate if the button is toggled
-        // This function is called every frame to update the rotation and render the triangle
         if (getIsRotating()) {
             rotation += 0.01;
         }
 
-        const modelMatrix = mat4.create();
+        const aspect = canvas.width / canvas.height;
+        const projectionMatrix = mat4.create();
+        mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 0.1, 100.0);
 
-        mat4.translate(modelMatrix, modelMatrix, vec3.fromValues(0, 0, -2.0)); // World position of the triangle's geometric center
-
-        // Translating the local center of triangle to the origin (0,0,0)
-        mat4.translate(modelMatrix, modelMatrix, vec3.fromValues(-triangleCenterX, -triangleCenterY, 0));
-
-    
-        // Rotating happens around its own center.
-        mat4.rotateY(modelMatrix, modelMatrix, rotation);
-
-        // Translating the object's local center back from the origin.
-        mat4.translate(modelMatrix, modelMatrix, vec3.fromValues(triangleCenterX, triangleCenterY, 0));
-
-        // 5. Applying scaling for visibility
-        mat4.scale(modelMatrix, modelMatrix, vec3.fromValues(1.5, 1.5, 1.5));
-
-
-        // Write the updated model matrix to the uniform buffer
-        device.queue.writeBuffer(uniformBuffer, 0, modelMatrix as Float32Array);
+        const modelViewMatrix = mat4.create();
+        mat4.translate(modelViewMatrix, modelViewMatrix, vec3.fromValues(0, 0, -4));
         
-        const encoder = device.createCommandEncoder(); // 
+        mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation);
+
+        const modelViewProjectionMatrix = mat4.create();
+        mat4.multiply(modelViewProjectionMatrix, projectionMatrix, modelViewMatrix);
+
+        mat4.scale(modelViewProjectionMatrix, modelViewProjectionMatrix, vec3.fromValues(2, 2, 2));
+
+        device.queue.writeBuffer(uniformBuffer, 0, modelViewProjectionMatrix as Float32Array);
+
+        const encoder = device.createCommandEncoder();
         const pass = encoder.beginRenderPass({
-            colorAttachments: [{ // 
+            colorAttachments: [{
                 view: context.getCurrentTexture().createView(),
                 loadOp: 'clear',
                 storeOp: 'store',
-                clearValue: { r: 0.5, g: 0, b: 0.25, a: 1 },
-            }]
+                clearValue: { r: 0.5, g: 0.5, b: 0.8, a: 1.0 },
+            }],
+            depthStencilAttachment: {
+                view: depthTexture.createView(),
+                depthClearValue: 1.0,
+                depthLoadOp: 'clear',
+                depthStoreOp: 'store',
+            },
         });
 
         pass.setPipeline(pipeline);
         pass.setBindGroup(0, bindGroup);
-        pass.draw(3);
+        // No vertex buffers are set, as we are not using any geometry buffers
+        pass.draw(36); // using draw() without vertex buffers
         pass.end();
 
         device.queue.submit([encoder.finish()]);
