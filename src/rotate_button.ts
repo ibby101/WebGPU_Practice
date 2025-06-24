@@ -8,7 +8,7 @@ let isRotating: boolean = true;
 let animationCallback: (() => void) | null = null;
 
 /**
- * Initializes rotation control button and animation loop.
+ * Initialises rotation control button and animation loop.
  * @param renderLoopFunction - The render function to call each frame.
  */
 export const setupRotationControl = (renderLoopFunction: () => void) => {
