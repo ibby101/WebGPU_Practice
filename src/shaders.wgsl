@@ -1,8 +1,8 @@
 struct VertexOutput {
     @builtin(position) Position: vec4<f32>,
     @location(0) Color: vec4<f32>,
-}
-
+    @location(1) UV: vec2<f32>,
+};
 struct Uniforms {
     modelViewProjectionMatrix: mat4x4<f32>,
 }
@@ -10,6 +10,9 @@ struct Uniforms {
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 
+@group(0) @binding(1) var mySampler: sampler;
+
+@group(0) @binding(2) var myTexture: texture_2d<f32>;
 
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutput {
@@ -44,10 +47,15 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutput {
     // directly assigning the desired color here
     output.Color = vec4<f32>(0.0, 1.0, 0.0, 1.0); // light blue color
 
+    output.UV = pos.xy + vec2<f32>(0.5); // remap from [-0.5, 0.5] → [0.0, 1.0]
+
+    output.UV = vec2<f32>(pos.x + 0.5, 1.0 - (pos.y + 0.5));
+
     return output;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return in.Color;
+    let texColor = textureSample(myTexture, mySampler, in.UV);
+    return texColor * in.Color;
 }
