@@ -13,8 +13,6 @@ export const setupTextureUpload = (device: GPUDevice) => {
         const file = (event.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
-        fileInput.textContent = "Upload Texture";
-
         const bitmap = await createImageBitmap(file);
 
         uploadedTexture = device.createTexture({
@@ -30,7 +28,7 @@ export const setupTextureUpload = (device: GPUDevice) => {
             { texture: uploadedTexture },
             [bitmap.width, bitmap.height]
         );
-
+        // debugging output
         console.log("✅ Texture uploaded successfully!");
     });
 
