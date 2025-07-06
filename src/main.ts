@@ -2,6 +2,8 @@ import shader from "./shaders.wgsl";
 import { mat4, vec3 } from "gl-matrix";
 import { setupRotationControl, getIsRotating } from "./rotate_button";
 import { setupTextureUpload } from "./upload_button"; 
+import { Camera } from "./objects/camera";
+import { setupMouseControl } from "./mouse_control";
 
 const Initialise = async () => {
     const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement;
@@ -89,24 +91,33 @@ const Initialise = async () => {
 
     let rotation = 0;
 
+     // creating a Camera instance
+    const camera = new Camera(vec3.fromValues(0, 0, 4)); // Initial camera position
+
+
     const render = () => {
         if (getIsRotating()) {
             rotation += 0.01;
         }
 
         const aspect = canvas.width / canvas.height;
-        const projectionMatrix = mat4.create();
-        mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 0.1, 100.0);
+        camera.setPerspective((2 * Math.PI) / 5, aspect, 0.1, 100.0);
+        camera.updateViewMatrix(); // Ensure camera's view matrix is up-to-date for rendering
 
-        const modelViewMatrix = mat4.create();
-        mat4.translate(modelViewMatrix, modelViewMatrix, vec3.fromValues(0, 0, -4));
-        
-        mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation);
+        const modelMatrix = mat4.create();
+        // Translate the cube itself
+        mat4.translate(modelMatrix, modelMatrix, vec3.fromValues(0, 0, 0)); // Cube is at origin relative to camera
+        mat4.rotateY(modelMatrix, modelMatrix, rotation); // Apply cube's rotation
+        mat4.scale(modelMatrix, modelMatrix, vec3.fromValues(2, 2, 2));
 
+
+        // Get the combined view-projection matrix from the camera
+        const viewProjectionMatrix = camera.getViewProjectionMatrix();
+
+        // Combine the model matrix with the camera's view-projection matrix
         const modelViewProjectionMatrix = mat4.create();
-        mat4.multiply(modelViewProjectionMatrix, projectionMatrix, modelViewMatrix);
+        mat4.multiply(modelViewProjectionMatrix, viewProjectionMatrix, modelMatrix);
 
-        mat4.scale(modelViewProjectionMatrix, modelViewProjectionMatrix, vec3.fromValues(2, 2, 2));
 
         device.queue.writeBuffer(uniformBuffer, 0, modelViewProjectionMatrix as Float32Array);
 
@@ -126,7 +137,8 @@ const Initialise = async () => {
             },
         });
 
-        pass.setPipeline(pipeline);
+
+ pass.setPipeline(pipeline);
         const textureView = getTextureView() ?? fallbackTexture.createView();
         const dynamicBindGroup = device.createBindGroup({
             layout: bindGroupLayout,
@@ -137,14 +149,18 @@ const Initialise = async () => {
             ],
         });
         pass.setBindGroup(0, dynamicBindGroup);
-        // No vertex buffers are set, as we are not using any geometry buffers
-        pass.draw(36); // using draw() without vertex buffers
+        pass.draw(36);
         pass.end();
 
         device.queue.submit([encoder.finish()]);
     };
 
-    setupRotationControl(render);
+    // setup mouse control, passing the canvas, camera instance, and the render function
+    setupMouseControl(canvas, camera, render);
+
+    setupRotationControl(render); // adding rotation control setup
+    // Initial render call
+    render();
 };
 
 Initialise();
