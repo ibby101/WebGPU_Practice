@@ -28,8 +28,8 @@ export class Pointer {
      */
 
     update(event: PointerEvent) {
-        if (event.buttons === this.middlemb) { // can change this to any button 
-            this.deltax = event.clientX - this.previousX;
+        if (event.buttons === this.lmb) { // can change this to any button on the mouse
+            this.deltax = this.previousX - event.clientX;
             this.deltay = event.clientY - this.previousY;
 
             this.previousX = event.clientX;
