@@ -1,4 +1,4 @@
-export const setupTextureUpload = (device: GPUDevice) => {
+export const setupTextureUpload = (device: GPUDevice, render: () => void) => {
     let uploadedTexture: GPUTexture | null = null;
 
     const sampler = device.createSampler({
@@ -28,8 +28,10 @@ export const setupTextureUpload = (device: GPUDevice) => {
             { texture: uploadedTexture },
             [bitmap.width, bitmap.height]
         );
+
         // debugging output
         console.log("✅ Texture uploaded successfully!");
+        render(); // re-render to apply the new texture
     });
 
     return {

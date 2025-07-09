@@ -2,7 +2,7 @@
 let animationFrameId: number;
 
 // Tracks whether rotation is currently enabled or paused
-let isRotating: boolean = true;
+let isRotating: boolean = false;
 
 // Callback function for rendering; assigned from outside this module
 let animationCallback: (() => void) | null = null;

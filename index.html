@@ -1,27 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>WebGPU Project</title>
   <style>
-    body {
+    :root {
+      --background-colour: #1e1e1e;
+      --accent-colour: #00bcd4;
+      --text-colour : #f0f0f0;
+      --button-hover: #0097a7;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      display: flex; /* using flexbox for centering */
-      justify-content: center; /* center horizontally */
-      align-items: center; /* center vertically */
-      min-height: 100vh; 
-      background-color: rgb(88, 81, 81); 
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background-color: var(--background-colour);
+      color: var(--text-colour);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
     }
     canvas {
-      border: 2px solid rgb(88, 81, 81); 
-      display: block;
+      border-radius: 12px;
+      border: 2px solid #333;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
     } 
+    button, input[type="file"] {
+      padding: 10px 16px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button {
+      background-color: var(--accent-colour);
+      color: white;
+    }
+    button:hover {
+      background-color: var(--button-hover);
+    }
+    input[type="file"] {
+      background-color:#333;
+      color: white;
+    }
   </style>
 </head>
 <body>
 
   <div id = "container">
-      <canvas id="gpu-canvas" width="1400" height="800"></canvas>
+      <canvas id="gpu-canvas" width="1300" height="700"></canvas>
       <button id="toggle-rotation-button">Toggle Rotation</button>
       <input type="file" id="texture-upload" accept="image/*">
   </div>
