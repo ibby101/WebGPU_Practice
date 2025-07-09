@@ -1,3 +1,0 @@
- WebGPU excels in flexibility provided to the developers, as it enables lower level interactions within the operation system. This can also be considered a con, as it means the developer may need to learn new techniques in order to develop programs using the API in an efficient manner.
-
-WebGPU also outperforms WebGL, due to its asynchronous nature, in both rendering, using the vertex and fragment shaders, and computational calculations, using the compute shader. Using the term asynchronous, it is meant that the API can parallellise the rendering process.
