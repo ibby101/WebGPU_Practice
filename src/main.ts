@@ -1,7 +1,7 @@
 import shader from "./shader/shaders.wgsl";
 import { mat4, vec3 } from "gl-matrix";
 import { setupRotationControl, getIsRotating } from "./buttons/rotate_button";
-import { setupTextureUpload } from "./buttons/upload_button"; 
+import { setupTextureUpload } from "./buttons/texture_upload"; 
 import { Camera } from "./objects/camera";
 import { setupMouseControl } from "./mouse_control";
 import { cubeVertexData, cubeVertexCount } from "./mesh/cube_data";
