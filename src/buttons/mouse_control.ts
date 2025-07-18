@@ -1,5 +1,5 @@
-import { Pointer } from './objects/pointer';
-import { Camera } from './objects/camera';
+import { Pointer } from '../objects/pointer';
+import { Camera } from '../objects/camera';
 
 export const setupMouseControl = (canvas: HTMLCanvasElement, camera: Camera, render: () => void) => {
     const pointer = new Pointer();

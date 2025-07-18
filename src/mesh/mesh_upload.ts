@@ -1,3 +1,5 @@
+import { MeshData } from "../types/types";
+
 interface Mesh {
     positions: Float32Array;
     uvs: Float32Array;
@@ -9,7 +11,7 @@ type ObjFile = string
 type FilePath = string
 
 type CachePosition = number
-type CacheFace = number
+type CacheFace = string
 type CacheNormal = number
 type CacheUV = number
 type CacheArray<T> = T[][]
@@ -43,7 +45,7 @@ export default class Objloader{
 
     // Parses the OBJ file content and returns a Mesh object
 
-    parse(file: ObjFile): Mesh {
+    parse(file: ObjFile): MeshData {
         const lines = file?.split("\n")
 
         // storing the data in cache arrays, to avoid creating new arrays every time
@@ -71,7 +73,7 @@ export default class Objloader{
                         cachedNormals.push(data.map(parseFloat))
                         break
                     case 'f': // face
-                        cachedFaces.push(data.map(parseFloat))
+                        cachedFaces.push(data)
                         break
                 }
             }
@@ -99,14 +101,27 @@ export default class Objloader{
                 finalIndices.push(i)
 
 
-                const [vertexIndex, uvIndex, normalIndex] = faceString.toString().split('/').map(Number);
+                const [v, uv, n] = faceString.toString().split('/').map(s => parseInt(s) || 0);
+
+                // converting to 0-based indices
+
+                const vertexIndex = v - 1;
+                const uvIndex = uv - 1;
+                const normalIndex = n - 1;
 
                 
                 // using the indices to get the positions, UVs, and normals from the cache arrays
 
-                vertexIndex > -1 && finalPositions.push(...cachedPositions[vertexIndex]);
-                uvIndex > -1 && finalUVs.push(...cachedUVs[uvIndex]);
-                normalIndex > -1 && finalNormals.push(...cachedNormals[normalIndex]);
+                // Safety checks
+                if (vertexIndex >= 0 && cachedPositions[vertexIndex]) {
+                    finalPositions.push(...cachedPositions[vertexIndex]);
+                }
+                if (uvIndex >= 0 && cachedUVs[uvIndex]) {
+                    finalUVs.push(...cachedUVs[uvIndex]);
+                }
+                if (normalIndex >= 0 && cachedNormals[normalIndex]) {
+                    finalNormals.push(...cachedNormals[normalIndex]);
+                }
 
                 i++
                 }

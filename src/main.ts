@@ -3,8 +3,9 @@ import { mat4, vec3 } from "gl-matrix";
 import { setupRotationControl, getIsRotating } from "./buttons/rotate_button";
 import { setupTextureUpload } from "./buttons/texture_upload"; 
 import { Camera } from "./objects/camera";
-import { setupMouseControl } from "./mouse_control";
-import { cubeVertexData, cubeVertexCount } from "./mesh/cube_data";
+import { setupMouseControl } from "./buttons/mouse_control";
+import { cubeVertexData} from "./mesh/cube_data";
+import { setupMeshUpload} from "./buttons/mesh_button";
 
 const Initialise = async () => {
     const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement;
@@ -38,17 +39,127 @@ const Initialise = async () => {
 
     const shaderModule = device.createShaderModule({ code: shader });
 
-    const verticesBuffer = device.createBuffer({
-        size: cubeVertexData.byteLength,
+    // declaring vertex and index buffers for updating
+
+    let currentVertexBuffer: GPUBuffer | null = null;
+    let currentIndexBuffer: GPUBuffer | null = null;;
+    let currentVertexCount: number = 0;
+
+const updateMeshBuffers = (meshData: any) => {
+
+    // Destroy old buffers if any
+    if (currentVertexBuffer) {
+        currentVertexBuffer.destroy();
+        currentVertexBuffer = null;
+    }
+    if (currentIndexBuffer) {
+        currentIndexBuffer.destroy();
+        currentIndexBuffer = null;
+    }
+
+    // debugging the mesh data
+
+    if (!meshData.uvs){
+        console.error("UV information is incomplete!");
+    }
+    if (!meshData.indices){
+        console.error("Mesh Indices data incomplete!");
+        return;
+    }
+    if (!meshData.positions){
+        console.error("Vertex data is incomplete!");
+        return;
+    }
+    if (!meshData.normals){
+        console.error("Normal information is incomplete!");
+        return;
+    }
+
+    const vertexCount = meshData.positions.length / 3;
+    const floatsPerVertex = 3 /*pos*/ + 4 /*color*/ + 2 /*uv*/ + 3 /*normal*/;
+
+    const interleavedData = new Float32Array(vertexCount * floatsPerVertex);
+
+    let offset = 0;
+
+    for (let i = 0; i < vertexCount; ++i){
+        // Position (3 floats)
+        interleavedData.set(meshData.positions.slice(i * 3, (i + 1) * 3), offset);
+        offset += 3;
+
+        // Color (4 floats) - hardcoded white
+        interleavedData.set([1.0, 1.0, 1.0, 1.0], offset);
+        offset += 4;
+
+        // UV (2 floats)
+        interleavedData.set(meshData.uvs.slice(i * 2, (i + 1) * 2), offset);
+        offset += 2;
+
+        // Normal (3 floats)
+        interleavedData.set(meshData.normals.slice(i * 3, (i + 1) * 3), offset);
+        offset += 3;
+    }
+
+    // Create and upload vertex buffer
+
+    const highVertexCount = meshData.positions.length / 3;
+    const stride = 48; // bytes per vertex
+    const bufferSize = highVertexCount * stride;
+    const paddedBufferSize = Math.ceil(bufferSize / 4) * 4;
+
+    currentVertexBuffer = device.createBuffer({
+        size: paddedBufferSize,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         mappedAtCreation: true,
-
     });
 
-    // writing cube vertex data to the buffer
+    new Float32Array(currentVertexBuffer.getMappedRange()).set(interleavedData);
+    currentVertexBuffer.unmap();  // unmap the buffer after writing data
 
-    new Float32Array(verticesBuffer.getMappedRange()).set(cubeVertexData);
-    verticesBuffer.unmap(); // this makes it available for use for the GPU
+    // Create and upload index buffer
+    currentIndexBuffer = device.createBuffer({
+        size: meshData.indices.byteLength,
+        usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        mappedAtCreation: true,
+    });
+
+    new Uint16Array(currentIndexBuffer.getMappedRange()).set(meshData.indices);
+    currentIndexBuffer.unmap();
+
+    currentVertexCount = meshData.indices.length;
+};
+
+
+    // Initial mesh setup - create the cube buffers
+    const initialCubeInterleavedData = new Float32Array(cubeVertexData); //
+    currentVertexBuffer = device.createBuffer({
+        size: initialCubeInterleavedData.byteLength,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        mappedAtCreation: true,
+    });
+
+    new Float32Array(currentVertexBuffer.getMappedRange()).set(initialCubeInterleavedData);
+    currentVertexBuffer.unmap();
+
+    const cubeIndices = new Uint16Array([
+        0, 1, 2, 0, 2, 3, // Front face
+        4, 5, 6, 4, 6, 7, // Right face
+        8, 9, 10, 8, 10, 11, // Back face
+        12, 13, 14, 12, 14, 15, // Left face
+        16, 17, 18, 16, 18, 19, // Top face
+        20, 21, 22, 20, 22, 23  // Bottom face
+    ]);
+
+    currentIndexBuffer = device.createBuffer({
+        size: cubeIndices.byteLength,
+        usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        mappedAtCreation: true,
+    });
+    new Uint16Array(currentIndexBuffer.getMappedRange()).set(cubeIndices);
+    currentIndexBuffer.unmap();
+
+    currentVertexCount = cubeIndices.length; // Use the count of indices for indexed drawing
+
 
     // setting up the uniform buffer for model-view-projection matrix
 
@@ -215,7 +326,12 @@ const Initialise = async () => {
 
 
         pass.setPipeline(pipeline);
-        pass.setVertexBuffer(0, verticesBuffer);
+        pass.setVertexBuffer(0, currentVertexBuffer);
+        if (currentIndexBuffer) {
+            pass.setIndexBuffer(currentIndexBuffer, 'uint16');
+        } else {
+            console.error("Index buffer is null! Cannot set index buffer."); 
+        }
         const textureView = getTextureView() ?? fallbackTexture.createView();
         const dynamicBindGroup = device.createBindGroup({
             layout: bindGroupLayout,
@@ -227,15 +343,15 @@ const Initialise = async () => {
             ],
         });
         pass.setBindGroup(0, dynamicBindGroup);
-        pass.draw(cubeVertexCount);
+        pass.drawIndexed(currentVertexCount, 1, 0, 0, 0); // draw the mesh using indexed drawing
         pass.end();
 
         device.queue.submit([encoder.finish()]);
     };
 
-    
     setupMouseControl(canvas, camera, render); // calling setupMouseControl, passing the canvas, camera instance, and the render function
     setupRotationControl(render); // calling setupRotationControl to initialize rotation control
+    setupMeshUpload(device, render, updateMeshBuffers); // calling setupMeshUpload to process new OBJ file and update scene
     render(); // initial render call
 };
 
