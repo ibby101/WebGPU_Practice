@@ -1,4 +1,3 @@
-
 // adding a vertex input structure for handling data from vertex buffers.
 
 struct VertexInput {

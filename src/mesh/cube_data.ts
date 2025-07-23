@@ -55,3 +55,29 @@ export const cubeVertexData = new Float32Array([
 ]);
 
 export const cubeVertexCount = 36;
+
+export const cubeIndices = new Uint32Array([
+    // Face 1 (Front)
+    0, 1, 2,
+    0, 2, 5,
+
+    // Face 2 (Back)
+    6, 7, 8,
+    6, 8, 11,
+
+    // Face 3 (Top)
+    12, 13, 14,
+    12, 14, 17,
+
+    // Face 4 (Bottom)
+    18, 19, 20,
+    18, 20, 23,
+
+    // Face 5 (Right)
+    24, 25, 26,
+    24, 26, 29,
+
+    // Face 6 (Left)
+    30, 31, 32,
+    30, 32, 35,
+]);

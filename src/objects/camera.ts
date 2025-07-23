@@ -45,7 +45,7 @@ export class Camera {
         this.distance += deltar * zoomSensitivity;
 
         const minDistance = 2.0; // minimum distance to prevent camera from going too close
-        const maxDistance = 15.0; // maximum distance to prevent camera from going too far
+        const maxDistance = 35.0; // maximum distance to prevent camera from going too far
         if (this.distance < minDistance) {
             this.distance = minDistance;
         }

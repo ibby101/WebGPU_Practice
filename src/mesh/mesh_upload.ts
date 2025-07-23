@@ -1,24 +1,15 @@
 import { MeshData } from "../types/types";
 
-interface Mesh {
-    positions: Float32Array;
-    uvs: Float32Array;
-    normals: Float32Array;
-    indices: Uint16Array;
-}
+type OBJPosition = number[]
+type OBJUV = number[]
+type OBJNormal = number[]
+type OBJFace = string[] // e.g., ['1/1/1', '2/2/2', '3/3/3', '4/4/4']
 
 type ObjFile = string
 type FilePath = string
 
-type CachePosition = number
-type CacheFace = string
-type CacheNormal = number
-type CacheUV = number
-type CacheArray<T> = T[][]
-
 type toBeFloat = number
-
-type toBeUInt16 = number
+type toBeUInt32 = number
 
 export default class Objloader{
 
@@ -50,31 +41,35 @@ export default class Objloader{
 
         // storing the data in cache arrays, to avoid creating new arrays every time
 
-        const cachedPositions: CacheArray<CachePosition> = []
-        const cachedFaces: CacheArray<CacheFace> = []
-        const cachedNormals: CacheArray<CacheNormal> = []
-        const cachedUVs: CacheArray<CacheUV> = []
+        const cachedPositions: OBJPosition[] = []
+        const cachedFaces: OBJFace[] = []
+        const cachedNormals: OBJNormal[] = []
+        const cachedUVs: OBJUV[] = []
 
         
         // reading the file line by line, and storing the data in the cache arrays
 
         {
-            for (const untrimmedLine of lines) {
-                const line = untrimmedLine.trim(); // removes whitespace from both ends
-                const [startingChar, ...data] = line.split(" ");
-                switch (startingChar) {
-                    case 'v': // vertex position
-                        cachedPositions.push(data.map(parseFloat))
-                        break
-                    case 'vt': // texture coordinate
-                        cachedUVs.push(data.map(parseFloat))
-                        break
-                    case 'vn': // vertex normal
-                        cachedNormals.push(data.map(parseFloat))
-                        break
-                    case 'f': // face
-                        cachedFaces.push(data)
-                        break
+        for (const untrimmedLine of lines) {
+            const line = untrimmedLine.trim(); // removes whitespace from both ends
+            const [startingChar, ...data] = line.split(" ");
+            switch (startingChar) {
+                case 'v': // vertex position
+                    cachedPositions.push(data.map(parseFloat))
+                    break
+                case 'vt': // texture coordinate
+                    cachedUVs.push(data.map(parseFloat))
+                    break
+                case 'vn': // vertex normal
+                    cachedNormals.push(data.map(parseFloat))
+                    break
+                case 'f': // face - store components as strings (e.g., ['1/1/1', '2/2/2', '3/3/3', '4/4/4'])
+                    // Filter out empty strings that might result from multiple spaces or trailing spaces
+                    const faceComp = data.filter(s => s !== '');
+                    if (faceComp.length > 0) { // Ensure there are actual components
+                        cachedFaces.push(faceComp);
+                    }
+                    break;
                 }
             }
         }
@@ -84,7 +79,7 @@ export default class Objloader{
         const finalPositions: toBeFloat[] = []
         const finalUVs: toBeFloat[] = []
         const finalNormals: toBeFloat[] = []
-        const finalIndices: toBeUInt16[] = []  
+        const finalIndices: toBeUInt32[] = []  
 
         {
             const cache: Record<string, number> = {}
@@ -132,7 +127,7 @@ export default class Objloader{
             positions: new Float32Array(finalPositions),
             uvs: new Float32Array(finalUVs),
             normals: new Float32Array(finalNormals),
-            indices: new Uint16Array(finalIndices),
+            indices: new Uint32Array(finalIndices),
         }
     }
 }
