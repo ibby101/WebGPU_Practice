@@ -1,6 +1,7 @@
  // importing from types.ts
 
- import { MeshData } from "../types/types";
+ import { calculateNormals } from "../mesh/normal_calculator";
+import { MeshData } from "../types/types";
 
  
 function paddingTo4Bytes(value: number): number {
@@ -31,10 +32,45 @@ function paddingTo4Bytes(value: number): number {
             this.currentIndexBuffer = null;
         }
 
-        // validate meshData
-        if (!meshData.uvs || !meshData.positions || !meshData.normals || !meshData.indices) {
-            console.error("MeshData is missing required properties.");
+        // validate mesh position data
+        if (!meshData.positions) {
+            console.error("MeshData is missing position data.");
             return;
+        }
+
+        if (!meshData.uvs) {
+            console.error("MeshData is missing UV data.");  
+            return;
+        }
+
+        // handling normals
+
+        let processedNormals : Float32Array;
+        if (!meshData.normals || meshData.normals.length === 0) {
+            console.warn("MeshData is missing normals data.\n\nCalculating normals from positions...");
+            try{
+                // passing positions to calculateNormals function
+                processedNormals = calculateNormals(meshData.positions, meshData.indices);
+                if (!processedNormals || processedNormals.length === 0) {
+                    console.error("Failed to calculate normals from positions, falling back to default normals.");
+                    processedNormals = new Float32Array(meshData.positions.length).fill(0);
+                }
+            }catch (e) {
+                console.error("Error calculating normals from positions:", e);
+                processedNormals = new Float32Array(meshData.positions.length).fill(0);
+            }
+        }else{
+            processedNormals = meshData.normals instanceof Float32Array ? meshData.normals : new Float32Array(meshData.normals);
+        }
+
+        // handling UVs
+
+        let processedUVs: Float32Array;
+        if (!meshData.uvs || meshData.uvs.length === 0){
+            console.warn("MeshData is missing UV data.\n\nUsing default UVs...");
+            processedUVs = new Float32Array(meshData.positions.length / 3 * 2).fill(0); // assuming 2D UVs
+        }else{
+            processedUVs = meshData.uvs;
         }
 
         const vertexCount = meshData.positions.length / 3; // assuming positions are in Float32Array format

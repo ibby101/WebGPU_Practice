@@ -1,4 +1,3 @@
-import {mat4} from 'gl-matrix';
 /**
  * Cube vertex data for rendering a cube in WebGPU.
  * Each vertex contains position, color, UV coordinates, and normal vector.

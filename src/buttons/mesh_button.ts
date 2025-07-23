@@ -1,4 +1,5 @@
 import Objloader from "../mesh/mesh_upload";
+import { MeshData } from "../types/types";
 
 export const setupMeshUpload = (
   device: GPUDevice,
@@ -22,20 +23,22 @@ export const setupMeshUpload = (
 
     try {
       const fileContent = await file.text();
-      const meshData = objloader.parse(fileContent);
-
-      const plainMeshData = {
-        positions: Array.from(meshData.positions),
-        uvs: Array.from(meshData.uvs),
-        normals: Array.from(meshData.normals),
-        indices: Array.from(meshData.indices),
+      const rawMeshData = objloader.parse(fileContent);
+      
+      // ensuring mesh data is in the correct format
+      const typedMeshData: MeshData = {
+          positions: rawMeshData.positions instanceof Float32Array ? rawMeshData.positions : new Float32Array(rawMeshData.positions),
+          uvs: rawMeshData.uvs instanceof Float32Array ? rawMeshData.uvs : new Float32Array(rawMeshData.uvs),
+          normals: rawMeshData.normals instanceof Float32Array ? rawMeshData.normals : new Float32Array(rawMeshData.normals),
+          indices: rawMeshData.indices instanceof Uint32Array ? rawMeshData.indices : new Uint32Array(rawMeshData.indices),
       };
 
-      if (validateMeshData(plainMeshData)) {
+      // validate mesh data before proceeding
+      if (validateMeshData(typedMeshData)) {
         console.log("Loaded mesh data:");
-        console.log("Vertices count:", meshData.positions.length / 3);
-        console.log("Normals count:", meshData.normals.length / 3);
-        onMeshLoaded(meshData);
+        console.log("Vertices count:", typedMeshData.positions.length / 3);
+        console.log("Normals count:", typedMeshData.normals.length / 3);
+        onMeshLoaded(typedMeshData);
         console.log("Mesh uploaded and buffers updated.");
       } else {
         console.error("Mesh data validation failed. Check console warnings.");
@@ -48,24 +51,21 @@ export const setupMeshUpload = (
   });
 };
 
-function validateMeshData(meshData: {
-  positions: number[],
-  uvs: number[],
-  normals: number[],
-  indices: number[]
-}): boolean {
+// helper function to validate mesh data
+function validateMeshData(meshData: MeshData): boolean {
   const vertexCount = meshData.positions.length / 3;
 
-  const uvsValid = meshData.uvs.length / 2 === vertexCount;
-  const normalsValid = meshData.normals.length / 3 === vertexCount;
-  const indicesValid = meshData.indices.every(i => i < vertexCount);
+  const uvsValid = (meshData.uvs?.length || 0) / 2 === vertexCount;
+  const normalsValid = (meshData.normals?.length || 0) / 3 === vertexCount;
+
+  const indicesValid = meshData.indices ? meshData.indices.every(index => index < vertexCount) : true;
 
   if (!uvsValid) {
-    console.warn(`UV count mismatch: Expected ${vertexCount * 2}, got ${meshData.uvs.length}`);
+    console.warn(`UV count mismatch: Expected ${vertexCount * 2}, got ${meshData.uvs?.length || 0}`);
   }
 
   if (!normalsValid) {
-    console.warn(`Normal count mismatch: Expected ${vertexCount * 3}, got ${meshData.normals.length}`);
+    console.warn(`Normal count mismatch: Expected ${vertexCount * 3}, got ${meshData.normals?.length || 0}`);
   }
 
   if (!indicesValid) {

@@ -1,5 +1,4 @@
 import shader from './shader/shaders.wgsl';
-import Objloader from './mesh/mesh_upload';
 
 import { LightManagement } from './pipeline/light_management';
 import { BufferManagement } from './pipeline/buffer_management';
@@ -10,10 +9,8 @@ import { setupTextureUpload } from './buttons/texture_upload';
 import { setupMouseControl } from './buttons/mouse_control';
 import { setupMeshUpload } from './buttons/mesh_button';
 import { cubeVertexData } from './mesh/cube_data';
-import {cubeIndices} from './mesh/cube_data';
+import { cubeIndices } from './mesh/cube_data';
 import { Camera } from './objects/camera';
-import { MeshData } from './types/types';
-import { mat4, vec3 } from 'gl-matrix';
 
 
 const Initialise = async () => {
@@ -108,7 +105,7 @@ const Initialise = async () => {
             },
         });
 
-        // using pipeline from the pipeline manager
+        // using pipeline from the pipeline manager class
         pass.setPipeline(pipelineManager.pipeline!);
 
         // creating bind group for the uniform buffer

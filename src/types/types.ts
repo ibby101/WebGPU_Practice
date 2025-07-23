@@ -1,6 +1,6 @@
 export type MeshData = {
-  positions: Float32Array | number[];
-  uvs: Float32Array | number[];
-  normals: Float32Array | number[];
-  indices: Uint32Array | number[];
+  positions: Float32Array;
+  uvs: Float32Array;
+  normals: Float32Array;
+  indices: Uint32Array;
 };
