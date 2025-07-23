@@ -45,6 +45,8 @@ const Initialise = async () => {
     });
 
     console.log('Fallback texture created:', fallbackTexture);
+    
+    // uploading the texture data to the fallback texture
 
     device.queue.writeTexture(
         { texture: fallbackTexture },
