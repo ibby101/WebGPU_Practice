@@ -1,5 +1,5 @@
 import { MeshData } from "../types/types";
-import { processMeshData } from "./deDuplicator"
+import { processMeshData } from "./de_duplicator"
 
 type ObjPosition = number[]
 type ObjUV = number[]
