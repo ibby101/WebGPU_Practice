@@ -22,7 +22,7 @@ const Initialise = async () => {
         throw new Error('WebGPU is not supported in this browser.');
     }
 
-    console.log('WebGPU adapter and device initialised:', adapter, device);
+    console.log('WebGPU adapter and device initialised:', adapter?.info, device);
 
     const { sampler, getTextureView } = setupTextureUpload(device, () => render());
 
@@ -107,11 +107,10 @@ const Initialise = async () => {
             },
         });
 
-        // using pipeline from the pipeline manager class
+        // using the external pipeline manager class
         pass.setPipeline(pipelineManager.pipeline!);
 
         // creating bind group for the uniform buffer
-
         const textureView = getTextureView() ?? fallbackTexture.createView();
 
         const dynamicBindGroup = device.createBindGroup({
@@ -126,7 +125,6 @@ const Initialise = async () => {
         pass.setBindGroup(0, dynamicBindGroup);
 
         // drawing the mesh using the current mesh data
-
         currentMesh.draw(pass);
 
         pass.end();
