@@ -18,10 +18,10 @@ export class Camera {
         this.distance = initialPosition[2]; // assuming initial position is in the Z direction
     }
 
-        /**
-        * Rotates the camera based on mouse delta.
-        * @param delta - An object with x and y properties representing changes in mouse position.
-        */
+    /**
+    * Rotates the camera based on mouse delta.
+    * @param delta - An object with x and y properties representing changes in mouse position.
+    */
 
     rotate(delta: { x: number, y: number }) {
         const sens = 0.005; // can adjust camera movement sensitivity here
@@ -40,6 +40,11 @@ export class Camera {
         }
     }
 
+    /**
+     * 
+     * @param deltar - The change in distance for zooming in or out.
+     */
+
     zoom(deltar: number){
         const zoomSensitivity = 0.001; // can adjust zoom sensitivity here
         this.distance += deltar * zoomSensitivity;
@@ -53,6 +58,10 @@ export class Camera {
             this.distance = maxDistance;
         }
     } 
+
+    /**
+     * Updates the view matrix based on the camera's position and rotation.
+     */
 
     updateViewMatrix() {
         
@@ -76,26 +85,27 @@ export class Camera {
         const eye = vec3.fromValues(x, y, z);
         vec3.add(eye, eye, target); // position is now treated as the orbit target
 
-        // Use lookAt to set the view matrix
-        // similar to the one used in my visualisation project!
-
+        // Use lookAt to set the view matrix ( from gl-matrix library )
         const up = vec3.fromValues(0, 1, 0);
         mat4.lookAt(this.viewMatrix, eye, target, up);
 
-        // previous implementation, the problem with it is that it would not rotate around the object's center, but rather around the camera's position.
+        /**
+         * previous implementation, the problem with it is that it would not rotate around the object's center, but rather around the camera's position.
+         * 
+         * reset the view matrix to identity
+         * mat4.identity(this.viewMatrix);
+         * 
+         * translate the camera away from the origin
+         * mat4.translate(this.viewMatrix, this.viewMatrix, vec3.negate(vec3.create(), this.position));
+         * 
+         * apply rotation and translation to the view matrix
+         * mat4.rotateX(this.viewMatrix, this.viewMatrix, this.rotation[0]);
+         * mat4.rotateY(this.viewMatrix, this.viewMatrix, this.rotation[1]);
+         * 
+         * translate the view matrix to the camera's position
+         * mat4.translate(this.viewMatrix, this.viewMatrix, vec3.negate(vec3.create(), this.position));
+         */
 
-        // // reset the view matrix to identity
-        // mat4.identity(this.viewMatrix);
-
-        // // translate the camera away from the origin
-        // mat4.translate(this.viewMatrix, this.viewMatrix, vec3.negate(vec3.create(), this.position));
-
-        // // apply rotation and translation to the view matrix
-        // mat4.rotateX(this.viewMatrix, this.viewMatrix, this.rotation[0]);
-        // mat4.rotateY(this.viewMatrix, this.viewMatrix, this.rotation[1]);
-
-        // // translate the view matrix to the camera's position
-        // mat4.translate(this.viewMatrix, this.viewMatrix, vec3.negate(vec3.create(), this.position));
     }
     
     /**
