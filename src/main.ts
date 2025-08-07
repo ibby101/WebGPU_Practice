@@ -7,6 +7,7 @@ import { PipelineManagement } from './pipeline/pipeline_management';
 import { setupRotationControl, getIsRotating } from './buttons/rotate_button';
 import { setupTextureUpload } from './buttons/texture_upload';
 import { setupMouseControl } from './buttons/mouse_control';
+import { resetMeshTexture } from './buttons/reset_button';
 import { setupMeshUpload } from './buttons/mesh_button';
 import { cubeVertexData } from './mesh/cube_data';
 import { cubeIndices } from './mesh/cube_data';
@@ -24,8 +25,6 @@ const Initialise = async () => {
 
     console.log('WebGPU adapter and device initialised:', adapter?.info, device);
 
-    const { sampler, getTextureView } = setupTextureUpload(device, () => render());
-
     const context = canvas.getContext('webgpu')!;
     console.log('Canvas context obtained:', context);
     const format = navigator.gpu.getPreferredCanvasFormat();
@@ -38,22 +37,31 @@ const Initialise = async () => {
 
     console.log('Canvas context configured.');
 
-    const fallbackTexture = device.createTexture({
+
+    const fallBackTexture = device.createTexture({
         size: [1, 1],
         format: 'rgba8unorm',
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
     });
 
-    console.log('Fallback texture created:', fallbackTexture);
-    
+    console.log('Fallback texture created:', fallBackTexture);
+
     // uploading the texture data to the fallback texture
 
     device.queue.writeTexture(
-        { texture: fallbackTexture },
+        { texture: fallBackTexture },
         new Uint8Array([255, 255, 255, 255]), // white color
         {bytesPerRow: 4},
         [1, 1]
     );
+
+    let currentTexture: GPUTexture = fallBackTexture;
+    let currentSampler: GPUSampler;
+
+    currentSampler = device.createSampler({
+        magFilter: 'linear',
+        minFilter: 'linear',
+    });
 
     console.log("Shader content type:", typeof shader); // should be 'string'
     const shaderModule = device.createShaderModule({code: shader});
@@ -111,13 +119,13 @@ const Initialise = async () => {
         pass.setPipeline(pipelineManager.pipeline!);
 
         // creating bind group for the uniform buffer
-        const textureView = getTextureView() ?? fallbackTexture.createView();
+        const textureView = currentTexture.createView();
 
         const dynamicBindGroup = device.createBindGroup({
             layout: pipelineManager.bindGroupLayout,
             entries: [
                 { binding: 0, resource: { buffer: matrixManager.getUniformBuffer() } },
-                { binding: 1, resource: sampler },
+                { binding: 1, resource: currentSampler },
                 { binding: 2, resource: textureView },
                 { binding: 3, resource: { buffer: lightManager.getLightUniformBuffer() } },
             ],
@@ -138,6 +146,18 @@ const Initialise = async () => {
     
     // updating mesh buffers with the new mesh data
     setupMeshUpload(device, render, (MeshData) => currentMesh.updateMeshBuffers(MeshData));
+
+    setupTextureUpload(device, render, (newTexture, newSampler) => {
+        currentTexture = newTexture;
+        currentSampler = newSampler;
+    });
+
+    const onTextureReset = () => {
+        currentTexture = fallBackTexture;
+    };
+
+    resetMeshTexture(onTextureReset, render);
+
     render();
 }
 

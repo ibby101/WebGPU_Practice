@@ -1,11 +1,8 @@
-export const setupTextureUpload = (device: GPUDevice, render: () => void) => {
-    let uploadedTexture: GPUTexture | null = null;
-
-    const sampler = device.createSampler({
-        magFilter: 'linear',
-        minFilter: 'linear',
-    });
-
+export const setupTextureUpload = (
+    device: GPUDevice,
+    render: () => void, 
+    onTextureUpdate: (newTexture: GPUTexture, newSampler: GPUSampler) => void
+) => {
     const fileInput = document.getElementById('texture-upload') as HTMLInputElement;
 
     
@@ -15,7 +12,7 @@ export const setupTextureUpload = (device: GPUDevice, render: () => void) => {
 
         const bitmap = await createImageBitmap(file);
 
-        uploadedTexture = device.createTexture({
+        const uploadedTexture = device.createTexture({
             size: [bitmap.width, bitmap.height],
             format: 'rgba8unorm',
             usage: GPUTextureUsage.TEXTURE_BINDING |
@@ -29,13 +26,13 @@ export const setupTextureUpload = (device: GPUDevice, render: () => void) => {
             [bitmap.width, bitmap.height]
         );
 
+        const newSampler = device.createSampler({magFilter: 'linear', minFilter: 'linear' });
+
+        onTextureUpdate(uploadedTexture, newSampler);
+
+        fileInput.value = ''
         // debugging output
-        console.log("✅ Texture uploaded successfully!");
+        console.log("Texture uploaded successfully!");
         render(); // re-render to apply the new texture
     });
-
-    return {
-        getTextureView: () => uploadedTexture?.createView() ?? null,
-        sampler,
-    };
 };
