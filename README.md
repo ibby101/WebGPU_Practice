@@ -1,8 +1,23 @@
-# WebGPU Practice
-Repository for testing WebGPU programs on a personal device
+# WebGPU - High Poly Mesh Visualiser
 
-## Dependencies
+This repository contains an experimental project developed using WebGPU, the next-generation web graphics API.
+It focuses on rendering high polygon meshes efficiently in the browser. The goal of this project is to explore
+WebGPU's performance advantages compared to WebGL when handling complex 3D geometry.
 
-Firstly, you need to download Node Package Manager, and Node Version Manager.
+## Features
+- Renders high-poly 3D meshes using WebGPU
+- Demonstrates efficient pipeline setup and rendering loop
+- Highlights WebGPU concepts such as adapters, devices, pipelines and bind groups
+
+## Prerequisites
+- A browser capable of supporting WebGPU, e.g., latest chrome, edge or safari version
+- Node.js and npm as this project was built using Webpack
+
+## Getting Started
+
+- Clone the repository
+- Navigate to repository folder
+- Install dependencies using npm install
+- Run the project using "npm start"
 
 
