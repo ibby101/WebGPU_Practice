@@ -91,6 +91,11 @@ const Initialise = async () => {
 
     const camera = new Camera([0, 0, 2]); // inital position of the camera
 
+    // --- Performance Tracking Variables ---
+    const performanceInfo = document.getElementById('performance-info');
+
+    const meshUploadTimeInfo = document.getElementById('mesh-upload-time');
+
     const render = () => {
         if (getIsRotating()) {
             rotation += 0.01;
@@ -139,13 +144,74 @@ const Initialise = async () => {
         device.queue.submit([encoder.finish()]);
     };
 
+    // --------------- Recording Performance Data ---------------
+
+    let lastFrameTime = performance.now();
+
+    const performanceData: { fps: number, renderTime: number }[] = [];
+    const MAX_DATA_POINTS = 10;
+
+    const tick = () => {
+        const currentTime = performance.now();
+        const frameTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
+
+        let fps = 0;
+        if (frameTime > 0) {
+            fps = 1000 / frameTime;
+        } else {
+            fps = 1000;
+        }
+
+        if (performanceInfo) {
+            performanceInfo.innerHTML = `FPS: ${fps.toFixed(2)}<br>Render Time: ${frameTime.toFixed(2)} ms`;
+        }
+
+        // adding new data to the array
+        performanceData.push({
+            fps: parseFloat(fps.toFixed(2)),
+            renderTime: parseFloat(frameTime.toFixed(2))
+        });
+        
+        // trimming the array to the maximum number of data points
+        if (performanceData.length > MAX_DATA_POINTS) {
+            performanceData.shift();
+        }
+
+        requestAnimationFrame(tick);
+    };
+
+    // New function to export data to CSV
+    const exportToCsv = () => {
+        if (performanceData.length === 0) {
+            alert('No performance data to export.');
+            return;
+        }
+
+        // Create the CSV header and rows
+        const header = "FPS,RenderTime(ms)\n";
+        const csvRows = performanceData.map(d => `${d.fps},${d.renderTime}`).join("\n");
+        const csvContent = header + csvRows;
+
+        // Create a downloadable Blob and a link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'performance_data.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // --------------- Event Listeners ---------------
 
     setupMouseControl(canvas, camera, render);
-    setupRotationControl(render);
+    setupRotationControl(render)
     
     // updating mesh buffers with the new mesh data
-    setupMeshUpload(device, render, (MeshData) => currentMesh.updateMeshBuffers(MeshData));
+    setupMeshUpload(device, render, (MeshData) => currentMesh.updateMeshBuffers(MeshData), meshUploadTimeInfo);
 
     setupTextureUpload(device, render, (newTexture, newSampler) => {
         currentTexture = newTexture;
@@ -158,7 +224,13 @@ const Initialise = async () => {
 
     resetMeshTexture(onTextureReset, render);
 
+    const downloadButton = document.getElementById('download-fps-data');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', exportToCsv);
+    }
+
     render();
+    tick(); // Start the new, separate tick loop
 }
 
 Initialise();

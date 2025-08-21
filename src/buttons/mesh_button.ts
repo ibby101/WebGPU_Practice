@@ -4,7 +4,8 @@ import { MeshData } from "../types/types";
 export const setupMeshUpload = (
   device: GPUDevice,
   render: () => void,
-  onMeshLoaded: (mesh: any) => void
+  onMeshLoaded: (mesh: any) => void,
+  meshUploadTimeInfo: HTMLElement | null
 ) => {
   const meshInput = document.getElementById('mesh-upload') as HTMLInputElement;
   const objloader = new Objloader();
@@ -15,6 +16,7 @@ export const setupMeshUpload = (
   }
 
   meshInput.addEventListener('change', async (event) => {
+    const startTime = performance.now(); // Start timing here
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) {
       console.warn("No mesh file selected.");
@@ -45,6 +47,10 @@ export const setupMeshUpload = (
       }
 
       render();
+      const uploadTime = performance.now() - startTime;
+      if (meshUploadTimeInfo) {
+        meshUploadTimeInfo.innerHTML = `Model Upload Time: ${uploadTime.toFixed(2)} ms`;
+      }
     } catch (error) {
       console.error("Error loading or parsing OBJ file", error);
     }

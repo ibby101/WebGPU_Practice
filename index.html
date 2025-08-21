@@ -120,10 +120,18 @@
     </style>
 </head>
 <body>
-
     <div id="container">
         <canvas id="gpu-canvas" width="1300" height="700"></canvas>
 
+        <div class="controls-wrapper">
+            <div id="performance-info" class="btn-base">
+                FPS: 0<br>
+                Render Time: 0.00 ms
+            </div>
+            <div id="mesh-upload-time" class="btn-base">
+                Model Upload Time: 0.00 ms
+            </div>
+        </div>
         <div class="controls-wrapper">
             <button id="toggle-rotation-button" class="btn-base">Start Rotation</button>
 
@@ -137,6 +145,9 @@
             <div class="file-input-wrapper btn-base">
                 <span>Upload Mesh (OBJ)</span>
                 <input type="file" id="mesh-upload" accept=".obj">
+            </div>
+            <div class="file-input-wrapper btn-base">
+                <button id="download-fps-data">Download FPS Data (CSV)</button>
             </div>
         </div>
     </div>
