@@ -1,7 +1,7 @@
 # WebGPU - High Poly Mesh Visualiser
 
 This repository contains an experimental project developed using **WebGPU**, the next-generation web graphics API.  
-It focuses on rendering high polygon meshes efficiently in the browser. The goal is to explore WebGPU's performance when handling **user-uploaded meshes and textures**.
+It focuses on rendering high polygon meshes efficiently in the browser. The goal is to explore WebGPU's performance when handling **user-uploaded meshes**.
 
 ---
 
