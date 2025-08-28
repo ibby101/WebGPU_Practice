@@ -21,17 +21,20 @@ It focuses on rendering high polygon meshes efficiently in the browser. The goal
 ---
 
 ### 2. Clone repository
-````bash
+```bash
 git clone https://github.com/ibby101/WebGPU_Practice.git
 ```
 
+---
+
+### 3. Install Dependencies
 ```bash
 npm install
 ```
 
 ---
 
-### 3. Run the Project
+### 4. Run the Project
 ```bash
 npm start
 ```
