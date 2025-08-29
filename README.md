@@ -51,6 +51,6 @@ http://localhost:8080
 
 ### 5. Using the Visualiser
 
-The application only accepts `.obj` files for local mesh uploads. You can drag and drop your .obj file onto the browser window or use the file selector to load your mesh.
-
+The application only accepts `.obj` files for local mesh uploads. You can use the file selector to load your mesh .obj file onto the browser window.
 Please note that some `.obj` files may not be centered at the origin (0,0,0) and might appear off-screen. If you don't see your mesh immediately, it has likely been rendered successfully but is just not visible in the current view.
+<img width="1281" height="822" alt="image" src="https://github.com/user-attachments/assets/3021e5e8-20c0-4c3b-8174-189fb7d537f5" />
